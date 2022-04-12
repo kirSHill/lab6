@@ -18,8 +18,9 @@ public class Client {
    private static String ip;
    private static Socket socket;
    private static final Logger log = Logger.getLogger(Client.class.getName());
+   private static int count;
 
-   public static void main(String[] args) {
+   public static void main(String[] args) throws InterruptedException {
       try {
          String[] argument = args[0].split(":");
          if (argument.length != 2) {
@@ -34,17 +35,32 @@ public class Client {
       connect();
       run();
    }
-   public static void connect() {
-      log.info("Подключение к серверу.");
+   public static void connect() throws InterruptedException {
       while (true) {
          try {
+            log.info("Подключение к серверу.");
             socket = new Socket(ip, port);
             ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
             serverInteraction = new ServerInteraction(inputStream, outputStream);
             return;
          } catch (IOException e) {
+            count++;
             log.info("Неудачное подключение к серверу " + e.getMessage());
+            Thread.sleep(2000);
+            if (count == 5) {
+               interaction.print(true, "Кажется, сервер умер. Хотите подключиться ещё раз? Напишите 'да' или 'нет'.");
+               String reconnect = interaction.getData();
+               if(reconnect.equals("да")) {
+                  count = 0;
+                  return;
+               } else if(reconnect.equals("нет")) {
+                  log.info("Завершение работы клиента.");
+                  return;
+               } else {
+                  interaction.print(true, "Введите 'да' или 'нет'!");
+               }
+            }
          }
       }
    }
